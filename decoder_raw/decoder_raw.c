@@ -57,6 +57,7 @@ static void decoder_raw_commit_txn(LogicalDecodingContext *ctx,
 static void decoder_raw_change(LogicalDecodingContext *ctx,
 							   ReorderBufferTXN *txn, Relation rel,
 							   ReorderBufferChange *change);
+static bool decoder_raw_filter_by_origin(LogicalDecodingContext *ctx, RepOriginId origin_id);
 
 void
 _PG_init(void)
@@ -75,6 +76,7 @@ _PG_output_plugin_init(OutputPluginCallbacks *cb)
 	cb->change_cb = decoder_raw_change;
 	cb->commit_cb = decoder_raw_commit_txn;
 	cb->shutdown_cb = decoder_raw_shutdown;
+	cb->filter_by_origin_cb = decoder_raw_filter_by_origin;
 }
 
 
@@ -629,4 +631,12 @@ decoder_raw_change(LogicalDecodingContext *ctx, ReorderBufferTXN *txn,
 
 	MemoryContextSwitchTo(old);
 	MemoryContextReset(data->context);
+}
+
+static bool decoder_raw_filter_by_origin (LogicalDecodingContext *ctx, RepOriginId origin_id)
+{
+	if (origin_id != 0)
+		return true;
+	else
+		return false;
 }
