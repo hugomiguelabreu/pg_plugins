@@ -138,6 +138,10 @@ decoder_raw_startup(LogicalDecodingContext *ctx, OutputPluginOptions *opt,
 						 errmsg("Incorrect value \"%s\" for parameter \"%s\"",
 								format, elem->defname)));
 		}
+		else if (strcmp(elem->defname, "origins") == 0)
+		{
+			// Do nothing
+		}
 		else
 		{
 			ereport(ERROR,
@@ -635,6 +639,38 @@ decoder_raw_change(LogicalDecodingContext *ctx, ReorderBufferTXN *txn,
 
 static bool decoder_raw_filter_by_origin (LogicalDecodingContext *ctx, RepOriginId origin_id)
 {
+	char *token;
+	const char s[1] = ",";
+	ListCell   *option;
+
+	foreach(option, ctx->output_plugin_options)
+	{
+		DefElem    *elem = lfirst(option);
+		Assert(elem->arg == NULL || IsA(elem->arg, String));
+
+		if (strcmp(elem->defname, "origins") == 0)
+		{
+			char	   *format = NULL;
+			
+			if (elem->arg == NULL)
+				ereport(ERROR,
+						(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+						 errmsg("No value specified for parameter \"%s\"",
+								elem->defname)));
+
+			format = strVal(elem->arg);
+   			token = strtok(format, s);
+   
+			while( token != NULL ) {
+				if (atoi(token) == origin_id)
+					return false;
+				token = strtok(NULL, s);
+			}
+
+			return true;
+		}
+	}
+	
 	if (origin_id != 0)
 		return true;
 	else
