@@ -12,6 +12,7 @@
  *-------------------------------------------------------------------------
  */
 
+#include <string.h>
 #include "postgres.h"
 
 #include "access/genam.h"
@@ -640,7 +641,8 @@ decoder_raw_change(LogicalDecodingContext *ctx, ReorderBufferTXN *txn,
 static bool decoder_raw_filter_by_origin (LogicalDecodingContext *ctx, RepOriginId origin_id)
 {
 	char *token;
-	const char s[1] = ",";
+	char usrList[1000];
+	const char s[2] = ",";
 	ListCell   *option;
 
 	foreach(option, ctx->output_plugin_options)
@@ -659,8 +661,9 @@ static bool decoder_raw_filter_by_origin (LogicalDecodingContext *ctx, RepOrigin
 								elem->defname)));
 
 			format = strVal(elem->arg);
-   			token = strtok(format, s);
-   
+			strcpy(usrList, format);
+   			token = strtok(usrList, s);
+
 			while( token != NULL ) {
 				if (atoi(token) == origin_id)
 					return false;
